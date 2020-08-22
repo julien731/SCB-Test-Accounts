@@ -49,9 +49,16 @@ $owner_id = filter_input( INPUT_POST, 'owner_id', FILTER_SANITIZE_STRING );
 
 			elseif( isset( $_GET['qr'] ) ) :
 
+				$base_uri = 'https://merchant-tw.gcp-merchant-staging.omiselabs.dev/';
+				$uri = 'api/v1/invoices';
+
+				// Without a return URI
+
+				echo '<h1>Without Return URI</h1>';
+
 				$client = new Client([
 					// Base URI is used with relative requests
-					'base_uri' => 'https://merchant-tw.gcp-merchant-staging.omiselabs.dev/',
+					'base_uri' => $base_uri,
 				]);
 
 				// Prepare headers.
@@ -59,9 +66,9 @@ $owner_id = filter_input( INPUT_POST, 'owner_id', FILTER_SANITIZE_STRING );
 					'Authorization' => 'MerchantModule key_8ba2fc45:b6e4828bd505903cd7377c8711d3e105d18cd23b6063424251823676c64230e7'
 				];
 
-				$payment = $client->request(
+				$payment_without_return_uri = $client->request(
 					'POST',
-					'api/v1/invoices',
+					$uri,
 					[
 						'headers' => $headers,
 						'body' => '{
@@ -78,7 +85,46 @@ $owner_id = filter_input( INPUT_POST, 'owner_id', FILTER_SANITIZE_STRING );
 					]
 				);
 
-				$response = json_decode( $payment->getBody(), true );
+				$response = json_decode( $payment_without_return_uri->getBody(), true );
+
+				printf( '<a href="%1$s">%1$s</a>', $response['data']['deepLink'] );
+
+				echo '<img src="data:image/gif;base64,' . $response['data']['qr'] . '" />';
+
+				// With a return URI
+
+				echo '<h1>With Return URI</h1>';
+
+				$client = new Client([
+					// Base URI is used with relative requests
+					'base_uri' => $base_uri,
+				]);
+
+				// Prepare headers.
+				$headers = [
+					'Authorization' => 'MerchantModule key_8ba2fc45:f7d1e869b5514bdda2ad1bc4c5c2a7722cc9786d23443b6fb8fb012c4165468a'
+				];
+
+				$payment_with_return_uri = $client->request(
+					'POST',
+					$uri,
+					[
+						'headers' => $headers,
+						'body' => '{
+    "acqMerchantId": "STAGING001",
+    "acqRequesterId": "DTG00001",
+    "ref1": "ref1 by pana",
+    "amount": "100.00",
+    "currency": "THB",
+    "ref2": "test",
+    "description": "description",
+    "callBackUrl": "" ,
+    "returnUri": "https://tlcl-dev.outsystemsenterprise.com/"
+}'
+					]
+				);
+
+				$response = json_decode( $payment_with_return_uri->getBody(), true );
 
 				printf( '<a href="%1$s">%1$s</a>', $response['data']['deepLink'] );
 
